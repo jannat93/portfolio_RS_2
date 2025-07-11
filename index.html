@@ -121,10 +121,13 @@
         menuBtnIcon.setAttribute("class", "ri-menu-3-line");
       });
 
-      // Load files list once and reuse
+      // Load files list and populate site
       fetch(API_BASE)
         .then(res => res.json())
-        .then(files => {
+        .then(data => {
+          const files = data.files; // ✅ Correctly get files array
+          const publications = data.publications;
+
           // Certificates
           const certContainer = document.getElementById("certificate-grid");
           certContainer.innerHTML = files.map(file => `
@@ -162,26 +165,6 @@
           if (pic2) document.getElementById('about-pic').src = `${API_BASE}/${pic2}`;
         })
         .catch(err => console.error('Error loading files:', err));
-
-      // Enable/disable submit buttons based on file input for each upload form
-      // (Assuming you have those forms on dashboard.html, not here; if needed, move this to dashboard page)
-      const uploadForms = ["cvForm", "certForm", "picForm"];
-
-      uploadForms.forEach(formId => {
-        const form = document.getElementById(formId);
-        if (!form) return;
-        const fileInput = form.querySelector('input[type="file"]');
-        const submitBtn = form.querySelector('button[type="submit"]');
-
-        // Disable button initially
-        if (submitBtn) submitBtn.disabled = true;
-
-        if (fileInput && submitBtn) {
-          fileInput.addEventListener('change', () => {
-            submitBtn.disabled = !fileInput.value;
-          });
-        }
-      });
 
       // Scroll Reveal Animations
       const scrollRevealOption = {
