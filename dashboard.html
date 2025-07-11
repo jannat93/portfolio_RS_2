@@ -32,7 +32,8 @@
   <section>
     <h2>Upload CV (PDF only)</h2>
     <form id="cvForm" enctype="multipart/form-data">
-      <input type="file" name="cv" accept="application/pdf" required />
+      <!-- IMPORTANT: input name="file" to match backend -->
+      <input type="file" name="file" accept="application/pdf" required />
       <button type="submit">Upload CV</button>
     </form>
     <div id="cvResult"></div>
@@ -42,7 +43,8 @@
   <section>
     <h2>Upload Certificate (PDF, JPG, PNG)</h2>
     <form id="certForm" enctype="multipart/form-data">
-      <input type="file" name="certificate" accept=".pdf,.jpg,.jpeg,.png" required />
+      <!-- input name="file" -->
+      <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required />
       <button type="submit">Upload Certificate</button>
     </form>
     <div id="certResult"></div>
@@ -52,7 +54,8 @@
   <section>
     <h2>Upload Profile Picture (JPG, PNG)</h2>
     <form id="picForm" enctype="multipart/form-data">
-      <input type="file" name="certificate" accept=".jpg,.jpeg,.png" required />
+      <!-- input name="file" -->
+      <input type="file" name="file" accept=".jpg,.jpeg,.png" required />
       <button type="submit">Upload Picture</button>
     </form>
     <div id="picResult"></div>
@@ -72,76 +75,68 @@
 <script>
   const API_BASE = 'https://portfolio-api2-1.onrender.com'; // Your backend URL
 
-  // Upload CV
-  const cvForm = document.getElementById('cvForm');
-  const cvResult = document.getElementById('cvResult');
-  cvForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const formData = new FormData(cvForm);
-    const res = await fetch(API_BASE + '/upload-cv', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (res.ok) {
-      cvResult.innerHTML = `<a href="${data.url}" target="_blank">View Uploaded CV</a>`;
-      cvForm.reset();
-    } else {
-      cvResult.textContent = 'Error: ' + (data.error || 'Upload failed');
-    }
-  });
+  // Generic Upload Handler for all 3 upload forms
+  function setupUpload(formId, resultId) {
+    const form = document.getElementById(formId);
+    const resultEl = document.getElementById(resultId);
 
-  // Upload Certificate
-  const certForm = document.getElementById('certForm');
-  const certResult = document.getElementById('certResult');
-  certForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const formData = new FormData(certForm);
-    const res = await fetch(API_BASE + '/upload-certificate', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (res.ok) {
-      certResult.innerHTML = `<a href="${data.url}" target="_blank">View Uploaded Certificate</a>`;
-      certForm.reset();
-    } else {
-      certResult.textContent = 'Error: ' + (data.error || 'Upload failed');
-    }
-  });
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      resultEl.textContent = 'Uploading...';
 
-  // Upload Profile Picture (same API)
-  const picForm = document.getElementById('picForm');
-  const picResult = document.getElementById('picResult');
-  picForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    const formData = new FormData(picForm);
-    const res = await fetch(API_BASE + '/upload-certificate', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (res.ok) {
-      picResult.innerHTML = `<a href="${data.url}" target="_blank">View Uploaded Picture</a>`;
-      picForm.reset();
-    } else {
-      picResult.textContent = 'Error: ' + (data.error || 'Upload failed');
-    }
-  });
+      try {
+        const formData = new FormData(form);
+
+        const res = await fetch(API_BASE + '/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          resultEl.innerHTML = `<a href="${data.url}" target="_blank">View Uploaded File</a>`;
+          form.reset();
+        } else {
+          resultEl.textContent = 'Upload failed: ' + (data.error || 'Unknown error');
+        }
+      } catch (err) {
+        resultEl.textContent = 'Upload error: ' + err.message;
+      }
+    });
+  }
+
+  setupUpload('cvForm', 'cvResult');
+  setupUpload('certForm', 'certResult');
+  setupUpload('picForm', 'picResult');
 
   // Manage Publications
   const pubForm = document.getElementById('pubForm');
   const pubList = document.getElementById('pubList');
 
   async function loadPublications() {
-    const res = await fetch(API_BASE + '/publications');
-    if (!res.ok) return;
-    const pubs = await res.json();
-    pubList.innerHTML = pubs.map(pub => `
-      <div class="publication-item">
-        <a href="${pub.url}" target="_blank">${pub.title}</a>
-        <button data-id="${pub.id}">Delete</button>
-      </div>
-    `).join('');
-    // Delete publications
-    pubList.querySelectorAll('button').forEach(btn => {
-      btn.onclick = async () => {
-        const id = btn.getAttribute('data-id');
-        const res = await fetch(`${API_BASE}/publications/${id}`, { method: 'DELETE' });
-        if (res.ok) loadPublications();
-      };
-    });
+    try {
+      const res = await fetch(API_BASE + '/publications');
+      if (!res.ok) return;
+      const pubs = await res.json();
+      pubList.innerHTML = pubs.map(pub => `
+        <div class="publication-item">
+          <a href="${pub.url}" target="_blank">${pub.title}</a>
+          <button data-id="${pub.id}">Delete</button>
+        </div>
+      `).join('');
+
+      // Delete publications buttons
+      pubList.querySelectorAll('button').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute('data-id');
+          const res = await fetch(`${API_BASE}/publications/${id}`, { method: 'DELETE' });
+          if (res.ok) loadPublications();
+        };
+      });
+    } catch (error) {
+      pubList.textContent = 'Failed to load publications';
+    }
   }
 
   pubForm.addEventListener('submit', async e => {
@@ -149,18 +144,24 @@
     const title = pubForm.title.value.trim();
     const url = pubForm.url.value.trim();
     if (!title || !url) return;
-    const res = await fetch(API_BASE + '/publications', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({title, url}),
-    });
-    if (res.ok) {
-      pubForm.reset();
-      loadPublications();
+
+    try {
+      const res = await fetch(API_BASE + '/publications', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ title, url }),
+      });
+      if (res.ok) {
+        pubForm.reset();
+        loadPublications();
+      }
+    } catch (error) {
+      alert('Failed to add publication');
     }
   });
 
   loadPublications();
+
 </script>
 
 </body>

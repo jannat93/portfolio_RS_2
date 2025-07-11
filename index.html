@@ -102,9 +102,10 @@
 
   <script src="https://unpkg.com/scrollreveal"></script>
   <script>
-    const API_BASE = 'https://portfolio-api2-1.onrender.com';
-
     document.addEventListener("DOMContentLoaded", () => {
+      const API_BASE = 'https://portfolio-api2-1.onrender.com';
+
+      // Menu toggle
       const menuBtn = document.getElementById("menu-btn");
       const navLinks = document.getElementById("nav-links");
       const menuBtnIcon = menuBtn.querySelector("i");
@@ -120,67 +121,58 @@
         menuBtnIcon.setAttribute("class", "ri-menu-3-line");
       });
 
-      // Load Certificates
+      // Load files list once and reuse
       fetch(API_BASE)
         .then(res => res.json())
         .then(files => {
-          const container = document.getElementById("certificate-grid");
-          container.innerHTML = files.map(file => `
-            <div class="portfolio__card">
+          // Certificates
+          const certContainer = document.getElementById("certificate-grid");
+          certContainer.innerHTML = files.map(file => `
+            <div class="portfolio__card certificate__card">
               <a href="${API_BASE}/${file}" target="_blank">
                 <img src="${API_BASE}/${file}" alt="${file}" />
-                <div>
+                <div class="certificate__details">
                   <h4>${file}</h4>
                 </div>
               </a>
             </div>
           `).join('');
-        });
 
-      // Load CV (you can improve this to pick the exact CV file by name if needed)
-      fetch(API_BASE)
-        .then(res => res.json())
-        .then(files => {
-          const cvFile = files.find(file => file.toLowerCase().includes('cv'));
+          // CV Link
+          const cvFile = files.find(f => f.toLowerCase().includes('cv'));
           if (cvFile) {
             document.getElementById("cvLink").href = `${API_BASE}/${cvFile}`;
           }
-        });
 
-      // Load Publications (assuming you uploaded publication cover images too)
-      fetch(API_BASE)
-        .then(res => res.json())
-        .then(files => {
-          const container = document.getElementById("publications-grid");
+          // Publications
+          const pubContainer = document.getElementById("publications-grid");
           const pubFiles = files.filter(f => f.toLowerCase().includes('publication'));
-          container.innerHTML = pubFiles.map(file => `
+          pubContainer.innerHTML = pubFiles.map(file => `
             <div class="portfolio__card">
               <a href="${API_BASE}/${file}" target="_blank">
                 <img src="${API_BASE}/${file}" alt="${file}" />
               </a>
             </div>
           `).join('');
-        });
 
-      // Load Profile Image
-      fetch(API_BASE)
-        .then(res => res.json())
-        .then(files => {
-          const pic1 = files.find(file => file.toLowerCase().includes('pic1'));
+          // Profile pictures
+          const pic1 = files.find(f => f.toLowerCase().includes('pic1'));
           if (pic1) document.getElementById('profile-pic').src = `${API_BASE}/${pic1}`;
-
-          const pic2 = files.find(file => file.toLowerCase().includes('pic2'));
+          const pic2 = files.find(f => f.toLowerCase().includes('pic2'));
           if (pic2) document.getElementById('about-pic').src = `${API_BASE}/${pic2}`;
-        });
+        })
+        .catch(err => console.error('Error loading files:', err));
 
       // Scroll Reveal Animations
       const scrollRevealOption = { distance: "50px", origin: "bottom", duration: 1000 };
       ScrollReveal().reveal(".header__content h2", { ...scrollRevealOption });
       ScrollReveal().reveal(".header__content .section__description", { ...scrollRevealOption, delay: 500 });
       ScrollReveal().reveal(".header__content .btn", { ...scrollRevealOption, delay: 1000 });
+
       ScrollReveal().reveal(".about__content .section__header", { ...scrollRevealOption });
       ScrollReveal().reveal(".about__content .section__description", { ...scrollRevealOption, delay: 500 });
       ScrollReveal().reveal(".about__content .btn", { ...scrollRevealOption, delay: 1000 });
+
       ScrollReveal().reveal(".service__card", { ...scrollRevealOption, interval: 500 });
       ScrollReveal().reveal(".portfolio__card", { duration: 1000, interval: 500 });
     });
