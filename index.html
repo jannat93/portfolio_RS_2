@@ -121,12 +121,11 @@
         menuBtnIcon.setAttribute("class", "ri-menu-3-line");
       });
 
-      // Load files list and populate site
+      // Fetch & load files
       fetch(API_BASE)
         .then(res => res.json())
         .then(data => {
-          const files = data.files; // ✅ Correctly get files array
-          const publications = data.publications;
+          const files = data.files;
 
           // Certificates
           const certContainer = document.getElementById("certificate-grid");
@@ -158,7 +157,7 @@
             </div>
           `).join('');
 
-          // Profile pictures
+          // Profile Pictures
           const pic1 = files.find(f => f.toLowerCase().includes('pic1'));
           if (pic1) document.getElementById('profile-pic').src = `${API_BASE}/${pic1}`;
           const pic2 = files.find(f => f.toLowerCase().includes('pic2'));
