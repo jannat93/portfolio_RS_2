@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Upload & Manage</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; }
+    form { margin-bottom: 2rem; }
+    input, button, textarea { display: block; width: 100%; margin-top: 0.5rem; padding: 0.5rem; }
+    button { background: #e9615e; color: white; border: none; cursor: pointer; }
+    button:hover { background: #c74a4a; }
+    .publication-item { border-bottom: 1px solid #ccc; margin-bottom: 0.5rem; padding-bottom: 0.5rem; }
+    .publication-item button { width: auto; background: #999; margin-left: 1rem; }
+  </style>
+</head>
+<body>
+
+  <!-- PIN SECURITY -->
+  <script>
+    const PIN = "1234";  // Change PIN here
+    const entered = prompt("Enter Dashboard PIN:");
+    if (entered !== PIN) {
+      alert("Incorrect PIN! Redirecting...");
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <h1>Dashboard</h1>
+
+  <!-- Upload CV -->
+  <section>
+    <h2>Upload CV (PDF only)</h2>
+    <form id="cvForm" enctype="multipart/form-data">
+      <input type="file" name="cv" accept="application/pdf" required />
+      <button type="submit">Upload CV</button>
+    </form>
+    <div id="cvResult"></div>
+  </section>
+
+  <!-- Upload Certificate -->
+  <section>
+    <h2>Upload Certificate (PDF, JPG, PNG)</h2>
+    <form id="certForm" enctype="multipart/form-data">
+      <input type="file" name="certificate" accept=".pdf,.jpg,.jpeg,.png" required />
+      <button type="submit">Upload Certificate</button>
+    </form>
+    <div id="certResult"></div>
+  </section>
+
+  <!-- Upload Profile Picture (same API as certificate) -->
+  <section>
+    <h2>Upload Profile Picture (JPG, PNG)</h2>
+    <form id="picForm" enctype="multipart/form-data">
+      <input type="file" name="certificate" accept=".jpg,.jpeg,.png" required />
+      <button type="submit">Upload Picture</button>
+    </form>
+    <div id="picResult"></div>
+  </section>
+
+  <!-- Manage Publications -->
+  <section>
+    <h2>Manage Publications</h2>
+    <form id="pubForm">
+      <input type="text" name="title" placeholder="Publication Title" required />
+      <input type="url" name="url" placeholder="Publication URL" required />
+      <button type="submit">Add Publication</button>
+    </form>
+    <div id="pubList"></div>
+  </section>
+
+<script>
+  const API_BASE = 'https://portfolio-api2-1.onrender.com'; // Your backend URL
+
+  // Upload CV
+  const cvForm = document.getElementById('cvForm');
+  const cvResult = document.getElementById('cvResult');
+  cvForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(cvForm);
+    const res = await fetch(API_BASE + '/upload-cv', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok) {
+      cvResult.innerHTML = `<a href="${data.url}" target="_blank">View Uploaded CV</a>`;
+      cvForm.reset();
+    } else {
+      cvResult.textContent = 'Error: ' + (data.error || 'Upload failed');
+    }
+  });
+
+  // Upload Certificate
+  const certForm = document.getElementById('certForm');
+  const certResult = document.getElementById('certResult');
+  certForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(certForm);
+    const res = await fetch(API_BASE + '/upload-certificate', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok) {
+      certResult.innerHTML = `<a href="${data.url}" target="_blank">View Uploaded Certificate</a>`;
+      certForm.reset();
+    } else {
+      certResult.textContent = 'Error: ' + (data.error || 'Upload failed');
+    }
+  });
+
+  // Upload Profile Picture (same API)
+  const picForm = document.getElementById('picForm');
+  const picResult = document.getElementById('picResult');
+  picForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(picForm);
+    const res = await fetch(API_BASE + '/upload-certificate', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (res.ok) {
+      picResult.innerHTML = `<a href="${data.url}" target="_blank">View Uploaded Picture</a>`;
+      picForm.reset();
+    } else {
+      picResult.textContent = 'Error: ' + (data.error || 'Upload failed');
+    }
+  });
+
+  // Manage Publications
+  const pubForm = document.getElementById('pubForm');
+  const pubList = document.getElementById('pubList');
+
+  async function loadPublications() {
+    const res = await fetch(API_BASE + '/publications');
+    if (!res.ok) return;
+    const pubs = await res.json();
+    pubList.innerHTML = pubs.map(pub => `
+      <div class="publication-item">
+        <a href="${pub.url}" target="_blank">${pub.title}</a>
+        <button data-id="${pub.id}">Delete</button>
+      </div>
+    `).join('');
+    // Delete publications
+    pubList.querySelectorAll('button').forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute('data-id');
+        const res = await fetch(`${API_BASE}/publications/${id}`, { method: 'DELETE' });
+        if (res.ok) loadPublications();
+      };
+    });
+  }
+
+  pubForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const title = pubForm.title.value.trim();
+    const url = pubForm.url.value.trim();
+    if (!title || !url) return;
+    const res = await fetch(API_BASE + '/publications', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title, url}),
+    });
+    if (res.ok) {
+      pubForm.reset();
+      loadPublications();
+    }
+  });
+
+  loadPublications();
+</script>
+
+</body>
+</html>
