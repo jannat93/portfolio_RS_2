@@ -163,8 +163,33 @@
         })
         .catch(err => console.error('Error loading files:', err));
 
+      // Enable/disable submit buttons based on file input for each upload form
+      // (Assuming you have those forms on dashboard.html, not here; if needed, move this to dashboard page)
+      const uploadForms = ["cvForm", "certForm", "picForm"];
+
+      uploadForms.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const fileInput = form.querySelector('input[type="file"]');
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        // Disable button initially
+        if (submitBtn) submitBtn.disabled = true;
+
+        if (fileInput && submitBtn) {
+          fileInput.addEventListener('change', () => {
+            submitBtn.disabled = !fileInput.value;
+          });
+        }
+      });
+
       // Scroll Reveal Animations
-      const scrollRevealOption = { distance: "50px", origin: "bottom", duration: 1000 };
+      const scrollRevealOption = {
+        distance: "50px",
+        origin: "bottom",
+        duration: 1000,
+      };
+
       ScrollReveal().reveal(".header__content h2", { ...scrollRevealOption });
       ScrollReveal().reveal(".header__content .section__description", { ...scrollRevealOption, delay: 500 });
       ScrollReveal().reveal(".header__content .btn", { ...scrollRevealOption, delay: 1000 });
